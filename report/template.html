@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bangladesh Exams and Conflict</title>
+<!-- Built by scripts/build_report.py: fonts and data are embedded so the file works offline. -->
+<style>
+/*FONTS*/
+:root { color-scheme: light; }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* Layout: report header, filter strip, then the original spreadsheet as a scrollable grid with
+   sticky year/district columns; a new conflict column sits beside them and opens event rows inline. */
+:root {
+  --bg: #f6f8f6;
+  --surface: #ffffff;
+  --surface-2: #eef2ef;
+  --line: #d9e0db;
+  --fg: #17211c;
+  --muted: #5c6a62;
+  --accent: #0b6b4f;          /* Bangladesh green, the page's one accent */
+  --accent-soft: #e0efe8;
+  --alert: #b3261e;           /* deaths / conflict, semantic */
+  --alert-soft: #fbe9e7;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --gutter: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101512; --surface: #161d19; --surface-2: #1d2621; --line: #2c3731;
+    --fg: #e4ebe6; --muted: #98a69e; --accent: #4fc39a; --accent-soft: #1b3229;
+    --alert: #ff8a80; --alert-soft: #3a1d1b; --warn: #f0c060; --warn-soft: #362a12;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101512; --surface: #161d19; --surface-2: #1d2621; --line: #2c3731;
+  --fg: #e4ebe6; --muted: #98a69e; --accent: #4fc39a; --accent-soft: #1b3229;
+  --alert: #ff8a80; --alert-soft: #3a1d1b; --warn: #f0c060; --warn-soft: #362a12;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+.wrap { padding-inline: var(--gutter); padding-block: 28px 40px; max-width: 1600px; margin-inline: auto; display: grid; gap: 18px; }
+.wrap > * { min-width: 0; }
+
+header h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(24px, 3.2vw, 34px); line-height: 1.15; margin: 0 0 6px; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 72ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 12px; font-variant-numeric: tabular-nums; }
+.facts b { font-weight: 700; color: var(--fg); }
+.facts span { color: var(--muted); }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.field { display: grid; gap: 4px; }
+.field label, .check span { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+select, input[type="search"] { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; min-width: 0; }
+input[type="search"] { width: 190px; max-width: 100%; }
+.check { display: flex; align-items: center; gap: 8px; padding-bottom: 7px; cursor: pointer; }
+.check span { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500; color: var(--fg); }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.btn { font: inherit; font-weight: 600; color: var(--accent); background: var(--accent-soft); border: 1px solid transparent; border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.spacer { flex: 1; }
+.count { color: var(--muted); padding-bottom: 7px; font-variant-numeric: tabular-nums; }
+
+.grid { overflow: auto; max-height: 72vh; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; width: max-content; min-width: 100%; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; vertical-align: top; }
+thead th { position: sticky; background: var(--surface-2); z-index: 2; font-weight: 600; font-size: 12px; }
+thead tr.groups th { top: 0; height: 30px; text-align: center; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-left: 1px solid var(--line); }
+thead tr.cols th { top: 30px; cursor: pointer; user-select: none; }
+thead tr.cols th:hover { color: var(--accent); }
+thead th[aria-sort="ascending"]::after { content: " ▲"; font-size: 9px; }
+thead th[aria-sort="descending"]::after { content: " ▼"; font-size: 9px; }
+.txt { text-align: left; }
+.sticky1, .sticky2 { position: sticky; z-index: 1; background: var(--surface); }
+.sticky1 { left: 0; width: 62px; min-width: 62px; }
+.sticky2 { left: 62px; min-width: 132px; border-right: 1px solid var(--line); font-weight: 600; }
+thead .sticky1, thead .sticky2 { z-index: 3; background: var(--surface-2); }
+.gstart { border-left: 1px solid var(--line); }
+
+th.summary-h { color: var(--alert); }
+td.summary { text-align: left; white-space: normal; width: 300px; min-width: 300px; max-width: 300px; background: color-mix(in srgb, var(--alert-soft) 45%, var(--surface)); }
+td.summary.none { color: var(--muted); background: var(--surface); }
+.ev-toggle { all: unset; cursor: pointer; display: grid; gap: 2px; width: 100%; border-radius: 4px; }
+.ev-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.ev-head { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--alert); }
+.chev { display: inline-block; transition: transform .15s; font-size: 11px; }
+[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.ev-sub { font-size: 12.5px; color: var(--fg); }
+.ev-places { font-size: 12.5px; color: var(--muted); }
+tr.has-ev { cursor: pointer; }
+tr.has-ev:hover td { background: var(--surface-2); }
+tr.has-ev:hover td.summary { background: color-mix(in srgb, var(--alert-soft) 80%, var(--surface)); }
+tr.open td { border-bottom-color: transparent; }
+.flag { color: var(--warn); font-weight: 700; cursor: help; }
+
+tr.detail > td { padding: 0 0 14px; background: color-mix(in srgb, var(--alert-soft) 30%, var(--surface)); text-align: left; white-space: normal; }
+.detail-inner { position: sticky; left: 0; width: var(--vieww, 900px); max-width: 1000px; padding: 4px 14px 0 74px; display: grid; gap: 10px; }
+.event { display: grid; grid-template-columns: 64px 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.event > div { min-width: 0; }
+.deaths { text-align: center; color: var(--alert); }
+.deaths b { display: block; font-size: 22px; line-height: 1.1; }
+.deaths small { font-size: 11px; color: var(--muted); }
+.ev-place { font-weight: 700; }
+.ev-desc { color: var(--muted); font-weight: 400; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 5px 0; }
+.chip { font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 2px 9px; background: var(--surface-2); color: var(--fg); }
+.chip.type1 { background: var(--accent-soft); color: var(--accent); }
+.chip.type2 { background: var(--alert-soft); color: var(--alert); }
+.chip.type3 { background: var(--warn-soft); color: var(--warn); }
+.chip.conf { background: var(--warn-soft); color: var(--warn); }
+.sources { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 12.5px; color: var(--muted); }
+.sources q { color: var(--fg); quotes: "\201C" "\201D"; }
+.note { font-size: 12.5px; color: var(--warn); margin-top: 4px; }
+
+.below { display: grid; gap: 14px; }
+details.nation { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+details.nation summary { cursor: pointer; font-weight: 600; }
+details.nation .list { display: grid; gap: 10px; margin-top: 12px; }
+.yr { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.notes { color: var(--muted); font-size: 12.5px; max-width: 90ch; display: grid; gap: 4px; }
+.notes p { margin: 0; }
+.empty { padding: 24px; color: var(--muted); text-align: left; }
+
+@media (max-width: 640px) {
+  .detail-inner { padding-left: 12px; }
+  .event { grid-template-columns: 48px 1fr; }
+  td.summary { width: 240px; min-width: 240px; max-width: 240px; }
+}
+@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Bangladesh exam results and conflict events, 2011–2025</h1>
+    <p>The SSC and HSC district results sheet, one row per district per year, with a new <strong>Conflict summary</strong> column. Click any row with events to see what happened that year.</p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <div class="controls" role="search">
+    <div class="field"><label for="f-year">Year</label><select id="f-year"><option value="">All years</option></select></div>
+    <div class="field"><label for="f-div">Division</label><select id="f-div"><option value="">All divisions</option></select></div>
+    <div class="field"><label for="f-dist">District</label><input id="f-dist" type="search" placeholder="Type a district" list="dist-list" autocomplete="off"><datalist id="dist-list"></datalist></div>
+    <label class="check" for="f-ev"><input id="f-ev" type="checkbox"><span>Only rows with events</span></label>
+    <div class="spacer"></div>
+    <span class="count" id="count"></span>
+    <button class="btn" id="expand-all" type="button">Expand all</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="below">
+    <details class="nation" id="nation"></details>
+    <div class="notes">
+      <p><span class="flag">*</span> HSC 2020 was not held because of COVID-19. That year's HSC results are automatic passes, so the 100% pass rates are not exam outcomes.</p>
+      <p>Conflict events come from the UCDP Georeferenced Event Dataset (Uppsala Conflict Data Program). Each event is an incident of organized violence; deaths are UCDP's best estimate. Events are matched to districts from their recorded location and matched by calendar year, not by exam date.</p>
+      <p>Event types follow UCDP: <em>State vs armed group</em> (government forces against an organized armed group), <em>Clashes between groups</em> (non-state groups such as party supporters fighting each other), <em>Attacks on civilians</em> (one-sided violence by a group or the state against unarmed people).</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = /*DATA*/null;
+
+const TYPE = { "1": "State vs armed group", "2": "Clashes between groups", "3": "Attacks on civilians" };
+const COLS = DATA.columns;
+const ROWS = DATA.rows;               // original sheet rows, original column order
+const EVENTS = DATA.events;           // row index -> [event, ...]
+const UNLOCATED = DATA.unlocated;
+
+// Column layout: Year, District, Division, Conflict summary (new), then the rest in original order.
+const GROUPS = [
+  { label: "", cols: [0, 1, 2], summaryAfter: true },
+  { label: "Population", cols: [3, 4, 5, 6, 7] },
+  { label: "SSC", cols: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17] },
+  { label: "HSC", cols: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27] },
+];
+const SHORT = c => c.replace(/^(SSC|HSC) /, "").replace("Education Board", "Board").replace("Exam Start Date", "Exam start")
+  .replace("Examinees Per 1k Pop", "Per 1k pop").replace("Total ", "").replace("Estimated Population", "Estimated")
+  .replace(/^Census (\d{4}) Population$/, "Census $1").replace(/^Census (\d{4}) (Male|Female)$/, "$1 $2");
+const TEXT_COLS = new Set([1, 2, 8, 17, 18, 27]);
+const SUMMARY = "summary";
+
+const plain = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/’/g, "'");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (v, i) => {
+  if (v === null || v === undefined || v === "") return "";
+  if (typeof v === "number") return (i === 0) ? String(v) : Number.isInteger(v) && !COLS[i].includes("(%)") ? v.toLocaleString("en-US") : v.toFixed(2);
+  return v;
+};
+
+function eventStats(list) {
+  const deaths = list.reduce((s, e) => s + e.best, 0);
+  const types = {};
+  list.forEach(e => types[e.type] = (types[e.type] || 0) + 1);
+  const places = [...new Set(list.map(e => plain(e.place)))];
+  return { deaths, types, places };
+}
+
+function summaryCell(idx, open) {
+  const list = EVENTS[idx];
+  if (!list) return `<td class="summary none">No recorded events</td>`;
+  const { deaths, types, places } = eventStats(list);
+  const n = list.length;
+  const typeText = Object.keys(types).sort().map(t => `${TYPE[t]} ×${types[t]}`).join(" · ");
+  const shown = places.slice(0, 3).join(", ") + (places.length > 3 ? `, +${places.length - 3} more` : "");
+  return `<td class="summary"><button class="ev-toggle" type="button" aria-expanded="${open}" data-idx="${idx}">
+    <span class="ev-head"><span class="chev" aria-hidden="true">▶</span>${n} event${n > 1 ? "s" : ""} · ${deaths} death${deaths === 1 ? "" : "s"}</span>
+    <span class="ev-sub">${esc(typeText)}</span>
+    <span class="ev-places">${esc(shown)}</span></button></td>`;
+}
+
+function sourcesHtml(raw) {
+  const parts = raw.split(/";\s*"/).map(s => s.replace(/^\s*"+|"+\s*$/g, "").trim()).filter(Boolean);
+  return parts.map(p => {
+    const m = p.match(/^([^,]+),(\d{4}-\d{2}-\d{2}),([\s\S]+)$/);
+    if (m) {
+      const headline = m[3].split(/\n/)[0].trim();
+      return `<li>${esc(m[1])}, ${esc(m[2])}: <q>${esc(headline)}</q></li>`;
+    }
+    return `<li>${esc(p.split(/\n/)[0])}</li>`;
+  }).join("");
+}
+
+function eventHtml(e) {
+  const desc = e.desc && plain(e.desc).trim() !== plain(e.place).trim() ? plain(e.desc).replace(/\s*\n+\s*/g, "; ").replace(/;\s*;/g, ";") : "";
+  const conf = e.method === "researched"
+    ? `<span class="chip conf">District checked against news reports · ${esc(e.confidence)} confidence</span>` : "";
+  return `<div class="event">
+    <div class="deaths"><b>${e.best}</b><small>death${e.best === 1 ? "" : "s"}</small></div>
+    <div>
+      <div class="ev-place">${esc(plain(e.place))}${desc ? ` <span class="ev-desc">· ${esc(desc)}</span>` : ""}</div>
+      <div class="chips"><span class="chip type${e.type}">${TYPE[e.type]}</span>${conf}</div>
+      <ul class="sources">${sourcesHtml(e.source)}</ul>
+      ${e.note ? `<div class="note">${esc(e.note)}</div>` : ""}
+    </div></div>`;
+}
+
+// ---- state ----
+const state = { year: "", div: "", dist: "", onlyEv: false, sortCol: null, sortDir: 1, open: new Set() };
+try {
+  const saved = JSON.parse(localStorage.getItem("bd-exams-conflict") || "{}");
+  ["year", "div", "dist", "onlyEv"].forEach(k => { if (k in saved) state[k] = saved[k]; });
+} catch (_) {}
+function save() {
+  try { localStorage.setItem("bd-exams-conflict", JSON.stringify({ year: state.year, div: state.div, dist: state.dist, onlyEv: state.onlyEv })); } catch (_) {}
+}
+
+// ---- header ----
+function buildHead() {
+  let g = "<tr class=\"groups\">", c = "<tr class=\"cols\">";
+  GROUPS.forEach((grp, gi) => {
+    const span = grp.cols.length + (grp.summaryAfter ? 1 : 0);
+    g += gi === 0
+      ? `<th class="sticky1" style="border-left:0"></th><th class="sticky2"></th><th colspan="${span - 2}" style="border-left:0"></th>`
+      : `<th colspan="${span}">${grp.label}</th>`;
+    grp.cols.forEach((ci, k) => {
+      const cls = [ci === 0 ? "sticky1" : ci === 1 ? "sticky2" : "", TEXT_COLS.has(ci) || ci <= 2 ? "txt" : "", k === 0 && gi > 0 ? "gstart" : ""].join(" ");
+      c += `<th class="${cls}" data-col="${ci}" scope="col" title="${esc(COLS[ci])}">${esc(ci <= 2 ? COLS[ci] : SHORT(COLS[ci]))}</th>`;
+    });
+    if (grp.summaryAfter) c += `<th class="txt summary-h" data-col="${SUMMARY}" scope="col" title="New column: conflict events in this district and year">Conflict summary</th>`;
+  });
+  document.getElementById("thead").innerHTML = g + "</tr>" + c + "</tr>";
+}
+
+// ---- body ----
+function visibleRows() {
+  const q = plain(state.dist).toLowerCase().trim();
+  let idx = ROWS.map((_, i) => i).filter(i => {
+    const r = ROWS[i];
+    return (!state.year || r[0] === +state.year) && (!state.div || r[2] === state.div)
+      && (!q || plain(r[1]).toLowerCase().includes(q)) && (!state.onlyEv || EVENTS[i]);
+  });
+  if (state.sortCol !== null) {
+    const key = state.sortCol === SUMMARY
+      ? i => (EVENTS[i] ? EVENTS[i].length * 1e6 + eventStats(EVENTS[i]).deaths : 0)
+      : i => { const v = ROWS[i][state.sortCol]; return typeof v === "number" ? v : String(v); };
+    idx.sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : a - b) * state.sortDir; });
+  }
+  return idx;
+}
+
+function render() {
+  const idx = visibleRows();
+  const html = idx.map(i => {
+    const r = ROWS[i], has = !!EVENTS[i], open = has && state.open.has(i);
+    let tds = "";
+    GROUPS.forEach((grp, gi) => {
+      grp.cols.forEach((ci, k) => {
+        const cls = [ci === 0 ? "sticky1" : ci === 1 ? "sticky2" : "", TEXT_COLS.has(ci) || ci <= 2 ? "txt" : "", k === 0 && gi > 0 ? "gstart" : ""].join(" ");
+        let v = esc(fmt(r[ci], ci));
+        if (r[0] === 2020 && ci === 23) v += ` <span class="flag" title="HSC 2020 not held (COVID-19): automatic passes">*</span>`;
+        tds += `<td class="${cls}">${v}</td>`;
+      });
+      if (grp.summaryAfter) tds += summaryCell(i, open);
+    });
+    let out = `<tr class="${has ? "has-ev" : ""}${open ? " open" : ""}" data-idx="${i}">${tds}</tr>`;
+    if (open) out += `<tr class="detail"><td colspan="${COLS.length + 1}"><div class="detail-inner">${EVENTS[i].map(eventHtml).join("")}</div></td></tr>`;
+    return out;
+  }).join("");
+  document.getElementById("tbody").innerHTML = html || `<tr><td class="empty" colspan="${COLS.length + 1}">No rows match these filters. Clear the district box or pick another year.</td></tr>`;
+  const withEv = idx.filter(i => EVENTS[i]);
+  document.getElementById("count").textContent = `${idx.length.toLocaleString()} of ${ROWS.length.toLocaleString()} rows`;
+  const btn = document.getElementById("expand-all");
+  btn.hidden = withEv.length === 0;
+  btn.textContent = withEv.length && withEv.every(i => state.open.has(i)) ? "Collapse all" : "Expand all";
+  document.querySelectorAll("thead tr.cols th").forEach(th => {
+    const col = th.dataset.col === SUMMARY ? SUMMARY : +th.dataset.col;
+    if (col === state.sortCol) th.setAttribute("aria-sort", state.sortDir > 0 ? "ascending" : "descending"); else th.removeAttribute("aria-sort");
+  });
+  sizeDetail();
+}
+
+function sizeDetail() {
+  const grid = document.getElementById("grid");
+  grid.style.setProperty("--vieww", Math.max(280, grid.clientWidth - 2) + "px");
+}
+
+// ---- wiring ----
+function init() {
+  const years = [...new Set(ROWS.map(r => r[0]))].sort();
+  const divs = [...new Set(ROWS.map(r => r[2]))].sort();
+  const dists = [...new Set(ROWS.map(r => r[1]))].sort();
+  document.getElementById("f-year").insertAdjacentHTML("beforeend", years.map(y => `<option>${y}</option>`).join(""));
+  document.getElementById("f-div").insertAdjacentHTML("beforeend", divs.map(d => `<option>${esc(d)}</option>`).join(""));
+  document.getElementById("dist-list").innerHTML = dists.map(d => `<option value="${esc(d)}">`).join("");
+
+  const located = Object.values(EVENTS).flat();
+  const deaths = located.reduce((s, e) => s + e.best, 0) + UNLOCATED.reduce((s, e) => s + e.best, 0);
+  document.getElementById("facts").innerHTML = [
+    [ROWS.length.toLocaleString(), "district-years (64 districts × 15 years)"],
+    [located.length + UNLOCATED.length, "conflict events"],
+    [Object.keys(EVENTS).length, "district-years with at least one event"],
+    [deaths.toLocaleString(), "deaths (UCDP best estimate)"],
+  ].map(([n, t]) => `<div><b>${n}</b> <span>${t}</span></div>`).join("");
+
+  const nationDeaths = UNLOCATED.reduce((s, e) => s + e.best, 0);
+  const byYear = {};
+  UNLOCATED.forEach(e => (byYear[e.year] ||= []).push(e));
+  document.getElementById("nation").innerHTML = `<summary>${UNLOCATED.length} nationwide events not tied to a district (${nationDeaths.toLocaleString()} deaths)</summary>
+    <div class="list">${Object.keys(byYear).sort().map(y => `<div class="yr">${y}</div>${byYear[y].map(eventHtml).join("")}`).join("")}</div>`;
+
+  const fy = document.getElementById("f-year"), fd = document.getElementById("f-div"), fs = document.getElementById("f-dist"), fe = document.getElementById("f-ev");
+  fy.value = state.year; fd.value = state.div; fs.value = state.dist; fe.checked = state.onlyEv;
+  fy.addEventListener("change", () => { state.year = fy.value; save(); render(); });
+  fd.addEventListener("change", () => { state.div = fd.value; save(); render(); });
+  fs.addEventListener("input", () => { state.dist = fs.value; save(); render(); });
+  fe.addEventListener("change", () => { state.onlyEv = fe.checked; save(); render(); });
+
+  document.getElementById("thead").addEventListener("click", ev => {
+    const th = ev.target.closest("tr.cols th"); if (!th) return;
+    const col = th.dataset.col === SUMMARY ? SUMMARY : +th.dataset.col;
+    if (state.sortCol === col) { if (state.sortDir === -1) { state.sortCol = null; state.sortDir = 1; } else state.sortDir = -1; }
+    else { state.sortCol = col; state.sortDir = col === SUMMARY ? -1 : 1; }
+    render();
+  });
+
+  document.getElementById("tbody").addEventListener("click", ev => {
+    if (ev.target.closest(".detail")) return;
+    const tr = ev.target.closest("tr.has-ev"); if (!tr) return;
+    const i = +tr.dataset.idx;
+    state.open.has(i) ? state.open.delete(i) : state.open.add(i);
+    render();
+    const again = document.querySelector(`tr[data-idx="${i}"] .ev-toggle`);
+    if (again && ev.target.closest(".ev-toggle")) again.focus({ preventScroll: true });
+  });
+
+  document.getElementById("expand-all").addEventListener("click", () => {
+    const withEv = visibleRows().filter(i => EVENTS[i]);
+    const all = withEv.every(i => state.open.has(i));
+    withEv.forEach(i => all ? state.open.delete(i) : state.open.add(i));
+    render();
+  });
+
+  window.addEventListener("resize", sizeDetail);
+  buildHead();
+  render();
+}
+init();
+</script>
+
+</body>
+</html>

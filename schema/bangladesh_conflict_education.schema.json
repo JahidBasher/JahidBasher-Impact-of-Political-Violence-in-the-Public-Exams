@@ -1,0 +1,452 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bangladesh_conflict_education.schema.json",
+  "title": "Bangladesh district-year education results with UCDP GED conflict events",
+  "description": "One document. Districts hold their static attributes once and a list of yearly records; each yearly record holds SSC/HSC results and the conflict events mapped to that district and year. Events with no recoverable district are kept in unlocated_events.",
+  "type": "object",
+  "required": [
+    "metadata",
+    "exam_calendar",
+    "districts",
+    "unlocated_events"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": [
+        "generated_on",
+        "year_range",
+        "sources"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generated_on": {
+          "type": "string",
+          "format": "date"
+        },
+        "year_range": {
+          "type": "object",
+          "required": [
+            "start",
+            "end"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "start": {
+              "$ref": "#/$defs/year"
+            },
+            "end": {
+              "$ref": "#/$defs/year"
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "file",
+              "description"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "exam_calendar": {
+      "description": "Exam start dates are national (identical for every district in a year), so they are stored once per year. A not_held session (HSC 2020, COVID-19) still has results in district records: those are automatic passes, not exam outcomes.",
+      "type": "array",
+      "minItems": 15,
+      "maxItems": 15,
+      "items": {
+        "type": "object",
+        "required": [
+          "year",
+          "ssc",
+          "hsc"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "year": {
+            "$ref": "#/$defs/year"
+          },
+          "ssc": {
+            "$ref": "#/$defs/exam_session"
+          },
+          "hsc": {
+            "$ref": "#/$defs/exam_session"
+          }
+        }
+      }
+    },
+    "districts": {
+      "type": "array",
+      "minItems": 64,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/district"
+      }
+    },
+    "unlocated_events": {
+      "description": "Events coded only at country level (district = Unknown). Carry their own year because they sit outside the district/year tree.",
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/event"
+          },
+          {
+            "required": [
+              "year"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "year": {
+      "type": "integer",
+      "minimum": 2011,
+      "maximum": 2025
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "percent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "district": {
+      "type": "object",
+      "required": [
+        "name",
+        "division",
+        "census",
+        "exam_boards",
+        "years"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Spelling follows the education file (Bogra, Chittagong, Comilla, Jessore, Barisal, ...).",
+          "type": "string"
+        },
+        "division": {
+          "enum": [
+            "Barisal",
+            "Chittagong",
+            "Dhaka",
+            "Khulna",
+            "Mymensingh",
+            "Rajshahi",
+            "Rangpur",
+            "Sylhet"
+          ]
+        },
+        "census": {
+          "type": "object",
+          "required": [
+            "2011",
+            "2022"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "2011": {
+              "type": "object",
+              "required": [
+                "population",
+                "male",
+                "female"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "population": {
+                  "$ref": "#/$defs/count"
+                },
+                "male": {
+                  "$ref": "#/$defs/count"
+                },
+                "female": {
+                  "$ref": "#/$defs/count"
+                }
+              }
+            },
+            "2022": {
+              "type": "object",
+              "required": [
+                "population"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "population": {
+                  "$ref": "#/$defs/count"
+                }
+              }
+            }
+          }
+        },
+        "exam_boards": {
+          "type": "object",
+          "required": [
+            "ssc",
+            "hsc"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ssc": {
+              "type": "string"
+            },
+            "hsc": {
+              "type": "string"
+            }
+          }
+        },
+        "years": {
+          "type": "array",
+          "minItems": 15,
+          "maxItems": 15,
+          "items": {
+            "$ref": "#/$defs/district_year"
+          }
+        }
+      }
+    },
+    "district_year": {
+      "type": "object",
+      "required": [
+        "year",
+        "estimated_population",
+        "ssc",
+        "hsc",
+        "conflict"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "year": {
+          "$ref": "#/$defs/year"
+        },
+        "estimated_population": {
+          "$ref": "#/$defs/count"
+        },
+        "ssc": {
+          "$ref": "#/$defs/exam_result"
+        },
+        "hsc": {
+          "$ref": "#/$defs/exam_result"
+        },
+        "conflict": {
+          "description": "event_count and deaths_best are derived from events and must agree with it; they are stored so readers need not recompute.",
+          "type": "object",
+          "required": [
+            "event_count",
+            "deaths_best",
+            "events"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "event_count": {
+              "$ref": "#/$defs/count"
+            },
+            "deaths_best": {
+              "$ref": "#/$defs/count"
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/event"
+              }
+            }
+          }
+        }
+      }
+    },
+    "exam_result": {
+      "type": "object",
+      "required": [
+        "institutions",
+        "appeared",
+        "passed",
+        "failed",
+        "pass_rate_pct",
+        "a_plus",
+        "a_plus_rate_pct",
+        "examinees_per_1k_pop"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "institutions": {
+          "$ref": "#/$defs/count"
+        },
+        "appeared": {
+          "$ref": "#/$defs/count"
+        },
+        "passed": {
+          "$ref": "#/$defs/count"
+        },
+        "failed": {
+          "$ref": "#/$defs/count"
+        },
+        "pass_rate_pct": {
+          "$ref": "#/$defs/percent"
+        },
+        "a_plus": {
+          "$ref": "#/$defs/count"
+        },
+        "a_plus_rate_pct": {
+          "$ref": "#/$defs/percent"
+        },
+        "examinees_per_1k_pop": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "exam_session": {
+      "type": "object",
+      "required": [
+        "status",
+        "start_date"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "held",
+            "not_held"
+          ]
+        },
+        "start_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "if": {
+        "properties": {
+          "status": {
+            "const": "held"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "start_date": {
+            "type": "string"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "start_date": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    "event": {
+      "description": "One UCDP GED event. Field names keep the GED originals where they exist.",
+      "type": "object",
+      "required": [
+        "relid",
+        "source_article",
+        "where_coordinates",
+        "where_description",
+        "best",
+        "district_mapping"
+      ],
+      "properties": {
+        "relid": {
+          "description": "UCDP GED event id. Prefix is the conflict's country code (BNG, MYA, AFG, IND), not necessarily the event location.",
+          "type": "string",
+          "pattern": "^[A-Z]{3}-\\d{4}-"
+        },
+        "year": {
+          "$ref": "#/$defs/year"
+        },
+        "date_start": {
+          "description": "Optional. Not in the current extract; add when GED is re-pulled with dates.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "date_end": {
+          "description": "Optional. Not in the current extract; add when GED is re-pulled with dates.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "source_article": {
+          "type": "string"
+        },
+        "where_coordinates": {
+          "type": "string"
+        },
+        "where_description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "best": {
+          "description": "UCDP best estimate of fatalities.",
+          "$ref": "#/$defs/count"
+        },
+        "district_mapping": {
+          "type": "object",
+          "required": [
+            "method",
+            "confidence"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "description": "direct = from place name/description; researched = resolved with outside sources; unlocated = country-level only.",
+              "enum": [
+                "direct",
+                "researched",
+                "unlocated"
+              ]
+            },
+            "confidence": {
+              "enum": [
+                "high",
+                "medium",
+                "medium-low",
+                "low",
+                "none"
+              ]
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
